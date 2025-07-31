@@ -211,13 +211,13 @@ export const ElevationProfile = forwardRef<
         const x = xScale(label.distance);
         const y = yScale(label.elevation);
 
-        // Draw vertical dashed line from profile to label
+        // Draw vertical dashed line from top to bottom of profile
         ctx.setLineDash([3, 3]);
         ctx.strokeStyle = "#666666";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x, padding.top - 10);
+        ctx.moveTo(x, padding.top - 10);
+        ctx.lineTo(x, padding.top + chartHeight);
         ctx.stroke();
         ctx.setLineDash([]);
 
