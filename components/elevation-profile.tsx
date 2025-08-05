@@ -1,5 +1,4 @@
 "use client";
-// @refresh reset
 
 import type React from "react";
 
@@ -196,13 +195,14 @@ export const ElevationProfile = forwardRef<
           const prevDisplacement = bottomDisplacements[prevLabel.id] || 0;
 
           if (Math.abs(x - prevX) < minDistanceSpacing) {
-            displacement = Math.max(displacement, prevDisplacement + 15);
+            displacement = Math.max(displacement, prevDisplacement + 18);
           }
         }
 
         bottomDisplacements[label.id] = displacement;
       });
 
+      // Calculate extra padding needed for displaced distance markers
       const maxBottomDisplacement = Math.max(
         0,
         ...Object.values(bottomDisplacements)
@@ -211,7 +211,7 @@ export const ElevationProfile = forwardRef<
       // Set fixed padding with extra space for draggable labels
       const basePadding = { top: 60, right: 40, bottom: 80, left: 60 };
       const extraTopPadding = 100; // Fixed extra space for draggable labels
-      const extraBottomPadding = Math.max(0, maxBottomDisplacement + 10);
+      const extraBottomPadding = maxBottomDisplacement; // Extra space for displaced markers
 
       const padding = {
         top: basePadding.top + extraTopPadding,
@@ -237,6 +237,9 @@ export const ElevationProfile = forwardRef<
       // Drawing dimensions
       const chartWidth = containerWidth - padding.left - padding.right;
       const chartHeight = baseHeight - basePadding.top - basePadding.bottom;
+
+      // Calculate the height needed for the black bar
+      const blackBarHeight = 30 + maxBottomDisplacement;
 
       // Calculate scales
       const maxDistance = gpxData.totalDistance;
@@ -331,7 +334,12 @@ export const ElevationProfile = forwardRef<
 
       // Draw distance markers at bottom (black bar)
       ctx.fillStyle = "#333333";
-      ctx.fillRect(padding.left, padding.top + chartHeight, chartWidth, 30);
+      ctx.fillRect(
+        padding.left,
+        padding.top + chartHeight,
+        chartWidth,
+        blackBarHeight
+      );
 
       // Distance text on black bar with displacement
       ctx.fillStyle = "#FFD700";
@@ -355,9 +363,9 @@ export const ElevationProfile = forwardRef<
 
       const startElevation =
         gpxData.elevationPoints[0]?.elevation || minElevation;
-      ctx.fillText(startName.toUpperCase(), padding.left + 20, 40);
+      ctx.fillText(startName.toUpperCase(), padding.left + 10, 40);
       ctx.font = "18px 'Helvetica Neue', Helvetica, sans-serif";
-      ctx.fillText(`${startElevation.toFixed(0)} m`, padding.left + 20, 55);
+      ctx.fillText(`${startElevation.toFixed(0)} m`, padding.left + 10, 55);
 
       ctx.textAlign = "right";
       ctx.font = "bold 32px 'Helvetica Neue', Helvetica, sans-serif";
@@ -366,18 +374,18 @@ export const ElevationProfile = forwardRef<
           ?.elevation || minElevation;
       ctx.fillText(
         finishName.toUpperCase(),
-        containerWidth - padding.right - 20,
+        containerWidth - padding.right - 10,
         40
       );
       ctx.font = "18px 'Helvetica Neue', Helvetica, sans-serif";
       ctx.fillText(
         `${endElevation.toFixed(0)} m`,
-        containerWidth - padding.right - 20,
+        containerWidth - padding.right - 10,
         55
       );
       ctx.fillText(
         `${maxDistance.toFixed(1)} km`,
-        containerWidth - padding.right - 20,
+        containerWidth - padding.right - 10,
         70
       );
 
@@ -429,13 +437,20 @@ export const ElevationProfile = forwardRef<
           previewTextY + 24
         );
 
-        // Draw preview connector line
+        // Draw preview connector line (solid from label to point)
         ctx.strokeStyle = "rgba(59, 130, 246, 0.7)";
         ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
+        ctx.setLineDash([]); // Solid line
         ctx.beginPath();
         ctx.moveTo(previewX, previewY);
         ctx.lineTo(previewX, padding.top - 10);
+        ctx.stroke();
+
+        // Draw dashed line from point down to distance marker
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(previewX, previewY);
+        ctx.lineTo(previewX, padding.top + chartHeight);
         ctx.stroke();
         ctx.setLineDash([]);
       }
@@ -450,10 +465,10 @@ export const ElevationProfile = forwardRef<
         const labelY =
           label.customY !== undefined ? label.customY : padding.top - 25;
 
-        // Draw L-shaped connector line
+        // Draw solid L-shaped connector line from label to profile point
         ctx.strokeStyle = "#666666";
         ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
+        ctx.setLineDash([]); // Solid line
         ctx.beginPath();
 
         // Vertical line from profile point up
@@ -468,6 +483,13 @@ export const ElevationProfile = forwardRef<
           ctx.lineTo(labelX, labelY + 15);
         }
 
+        ctx.stroke();
+
+        // Draw dashed line from profile point down to distance marker
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(profileX, profileY);
+        ctx.lineTo(profileX, padding.top + chartHeight);
         ctx.stroke();
         ctx.setLineDash([]);
 
@@ -519,18 +541,7 @@ export const ElevationProfile = forwardRef<
             labelX,
             textY + 24
           );
-        } else {
-          ctx.fillText(`${label.distance.toFixed(1)} km`, labelX, textY + 24);
         }
-
-        // Draw point on profile
-        ctx.beginPath();
-        ctx.arc(profileX, profileY, 4, 0, 2 * Math.PI);
-        ctx.fillStyle = "#DC2626";
-        ctx.fill();
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2;
-        ctx.stroke();
 
         // Highlight draggable labels
         if (!isAddingLabel && !hideOutlines) {
@@ -564,7 +575,7 @@ export const ElevationProfile = forwardRef<
 
       const cornerSize = 15;
       const topLineStart = 10; // Above the start/end text
-      const bottomLineEnd = dynamicHeight - 5; // Below the distance markers
+      const bottomLineEnd = dynamicHeight - 5; // Below the expanded black bar
 
       // Draw complete frame with 90-degree corners angled inward
       ctx.beginPath();

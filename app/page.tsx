@@ -22,6 +22,7 @@ import {
   Edit2,
   Check,
   XIcon,
+  RefreshCw,
 } from "lucide-react";
 import { ElevationProfile } from "../components/elevation-profile";
 import { parseGPX, type GPXData } from "../lib/gpx-parser";
@@ -54,6 +55,7 @@ export default function GPXElevationProfiler() {
   const [startName, setStartName] = useState("START");
   const [finishName, setFinishName] = useState("FINISH");
   const [hideOutlines, setHideOutlines] = useState(false);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -385,15 +387,22 @@ export default function GPXElevationProfiler() {
 
           <div className="lg:col-span-3 space-y-6">
             {gpxData ? (
-              <Card>
+              <Card className="relative">
                 <CardContent className="p-6">
+                  {process.env.NODE_ENV === "development" && (
+                    <Button
+                      onClick={() => setProfileRefreshKey((prev) => prev + 1)}
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2 z-10"
+                      title="Refresh Canvas (Dev Only)"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  )}
                   <ElevationProfile
                     ref={canvasRef}
-                    key={
-                      process.env.NODE_ENV === "development"
-                        ? Date.now()
-                        : "static"
-                    }
+                    key={profileRefreshKey}
                     gpxData={gpxData}
                     labels={labels}
                     hoveredClimb={hoveredClimb}
