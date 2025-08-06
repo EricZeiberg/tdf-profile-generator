@@ -12,6 +12,7 @@ import {
 } from "react";
 import type { GPXData } from "../lib/gpx-parser";
 import type { ClimbSegment } from "../lib/climb-detector";
+import { formatNumberEuropean } from "../lib/format-number";
 
 interface LabelPoint {
   id: string;
@@ -299,7 +300,7 @@ export const ElevationProfile = forwardRef<
       ctx.lineWidth = 1;
       ctx.setLineDash([]);
 
-      const gridInterval = 30;
+      const gridInterval = 100;
       const startGridElevation =
         Math.ceil(minElevation / gridInterval) * gridInterval;
 
@@ -350,7 +351,7 @@ export const ElevationProfile = forwardRef<
         const x = xScale(label.distance);
         const displacement = bottomDisplacements[label.id] || 0;
         ctx.fillText(
-          `${label.distance.toFixed(1)}`,
+          `${formatNumberEuropean(label.distance, 1)}`,
           x,
           padding.top + chartHeight + 20 + displacement
         );
@@ -365,7 +366,11 @@ export const ElevationProfile = forwardRef<
         gpxData.elevationPoints[0]?.elevation || minElevation;
       ctx.fillText(startName.toUpperCase(), padding.left + 10, 40);
       ctx.font = "18px 'Helvetica Neue', Helvetica, sans-serif";
-      ctx.fillText(`${startElevation.toFixed(0)} m`, padding.left + 10, 55);
+      ctx.fillText(
+        `${formatNumberEuropean(startElevation, 0)} m`,
+        padding.left + 10,
+        55
+      );
 
       ctx.textAlign = "right";
       ctx.font = "bold 32px 'Helvetica Neue', Helvetica, sans-serif";
@@ -379,12 +384,12 @@ export const ElevationProfile = forwardRef<
       );
       ctx.font = "18px 'Helvetica Neue', Helvetica, sans-serif";
       ctx.fillText(
-        `${endElevation.toFixed(0)} m`,
+        `${formatNumberEuropean(endElevation, 0)} m`,
         containerWidth - padding.right - 10,
         55
       );
       ctx.fillText(
-        `${maxDistance.toFixed(1)} km`,
+        `${formatNumberEuropean(maxDistance, 1)} km`,
         containerWidth - padding.right - 10,
         70
       );
@@ -427,12 +432,12 @@ export const ElevationProfile = forwardRef<
 
         ctx.font = "10px 'Helvetica Neue', Helvetica, sans-serif";
         ctx.fillText(
-          `${hoveredClimb.peakElevation.toFixed(0)} m`,
+          `${formatNumberEuropean(hoveredClimb.peakElevation, 0)} m`,
           previewX,
           previewTextY + 12
         );
         ctx.fillText(
-          `${hoveredClimb.peakDistance.toFixed(1)} km`,
+          `${formatNumberEuropean(hoveredClimb.peakDistance, 1)} km`,
           previewX,
           previewTextY + 24
         );
@@ -471,16 +476,27 @@ export const ElevationProfile = forwardRef<
         ctx.setLineDash([]); // Solid line
         ctx.beginPath();
 
-        // Vertical line from profile point up
-        ctx.moveTo(profileX, profileY);
-        ctx.lineTo(profileX, padding.top - 10);
+        // Calculate the bottom of the label (consistent with outline bounds)
+        const labelBottom = labelY + 5;
 
-        // If label is moved, draw L-shaped connector
+        // If label is moved, draw L-shaped connector starting from label bottom
         if (label.customX !== undefined || label.customY !== undefined) {
-          // Horizontal line from vertical line to label
-          ctx.lineTo(labelX, padding.top - 10);
-          // Vertical line down to label
-          ctx.lineTo(labelX, labelY + 15);
+          // Start from label bottom
+          ctx.moveTo(labelX, labelBottom);
+
+          // Set intermediate height at 50% between label bottom and profile point
+          const intermediateY = labelBottom + (profileY - labelBottom) * 0.5;
+
+          // Vertical line down from label to intermediate height
+          ctx.lineTo(labelX, intermediateY);
+          // Horizontal line to profile X position
+          ctx.lineTo(profileX, intermediateY);
+          // Vertical line down to profile point
+          ctx.lineTo(profileX, profileY);
+        } else {
+          // For non-moved labels, draw simple vertical line
+          ctx.moveTo(profileX, profileY);
+          ctx.lineTo(profileX, padding.top - 10);
         }
 
         ctx.stroke();
@@ -526,7 +542,11 @@ export const ElevationProfile = forwardRef<
 
         // 1. Category is already drawn as badge above
         // 2. Elevation first
-        ctx.fillText(`${label.elevation.toFixed(0)} m`, labelX, textY);
+        ctx.fillText(
+          `${formatNumberEuropean(label.elevation, 0)} m`,
+          labelX,
+          textY
+        );
 
         // 3. Name second
         ctx.fillText(label.name, labelX, textY + 12);
@@ -535,9 +555,10 @@ export const ElevationProfile = forwardRef<
         ctx.font = "bold 10px 'Helvetica Neue', Helvetica, sans-serif";
         if (label.category && label.averageGradient !== undefined) {
           ctx.fillText(
-            `(${label.distance.toFixed(1)} km a ${label.averageGradient.toFixed(
+            `(${formatNumberEuropean(
+              label.distance,
               1
-            )}%)`,
+            )} km a ${formatNumberEuropean(label.averageGradient, 1)}%)`,
             labelX,
             textY + 24
           );
@@ -561,7 +582,7 @@ export const ElevationProfile = forwardRef<
       ctx.font = "bold 16px 'Helvetica Neue', Helvetica, sans-serif";
       ctx.textAlign = "right";
       ctx.fillText(
-        `${maxDistance.toFixed(1)} km`,
+        `${formatNumberEuropean(maxDistance, 1)} km`,
         padding.left + chartWidth - 10,
         dynamicHeight - 15
       );

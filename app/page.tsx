@@ -27,6 +27,7 @@ import {
 import { ElevationProfile } from "../components/elevation-profile";
 import { parseGPX, type GPXData } from "../lib/gpx-parser";
 import { detectClimbs, type ClimbSegment } from "../lib/climb-detector";
+import { formatNumberEuropean } from "../lib/format-number";
 
 interface LabelPoint {
   id: string;
@@ -233,19 +234,19 @@ export default function GPXElevationProfiler() {
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>
                         <strong>Distance:</strong>{" "}
-                        {gpxData.totalDistance.toFixed(1)} km
+                        {formatNumberEuropean(gpxData.totalDistance, 1)} km
                       </p>
                       <p>
                         <strong>Elevation Gain:</strong>{" "}
-                        {gpxData.totalElevationGain.toFixed(0)} m
+                        {formatNumberEuropean(gpxData.totalElevationGain, 0)} m
                       </p>
                       <p>
                         <strong>Max Elevation:</strong>{" "}
-                        {gpxData.maxElevation.toFixed(0)} m
+                        {formatNumberEuropean(gpxData.maxElevation, 0)} m
                       </p>
                       <p>
                         <strong>Min Elevation:</strong>{" "}
-                        {gpxData.minElevation.toFixed(0)} m
+                        {formatNumberEuropean(gpxData.minElevation, 0)} m
                       </p>
                       <p>
                         <strong>Climbs Detected:</strong>{" "}
@@ -322,12 +323,14 @@ export default function GPXElevationProfiler() {
                           </div>
                           <div className="text-gray-600 mt-1">
                             <div>
-                              {climb.length.toFixed(1)} km •{" "}
-                              {climb.elevationGain.toFixed(0)}m gain
+                              {formatNumberEuropean(climb.length, 1)} km •{" "}
+                              {formatNumberEuropean(climb.elevationGain, 0)}m
+                              gain
                             </div>
                             <div>
-                              {climb.averageGradient.toFixed(1)}% avg • Score:{" "}
-                              {climb.score.toFixed(0)}
+                              {formatNumberEuropean(climb.averageGradient, 1)}%
+                              avg • Score:{" "}
+                              {formatNumberEuropean(climb.score, 0)}
                             </div>
                           </div>
                         </div>
@@ -618,8 +621,10 @@ export default function GPXElevationProfiler() {
                                       )}
                                     </div>
                                     <div className="text-gray-600 text-xs mt-1">
-                                      {label.distance.toFixed(1)} km •{" "}
-                                      {label.elevation.toFixed(0)} m
+                                      {formatNumberEuropean(label.distance, 1)}{" "}
+                                      km •{" "}
+                                      {formatNumberEuropean(label.elevation, 0)}{" "}
+                                      m
                                     </div>
                                   </div>
                                   <div className="flex gap-1">
